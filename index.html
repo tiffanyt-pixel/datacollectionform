@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Egocentric Data Configurator · iMerit</title>
+<style>
+  /* =========================================================
+     iMerit brand palette — sampled from the official logo
+     Flame red #D74143 · black wordmark · warm cream surfaces
+     ========================================================= */
+  :root {
+    --ink:        #1A1A1A;
+    --inkSoft:    #333333;
+    --primary:    #D74143;   /* iMerit flame red */
+    --primaryDk:  #B22A2C;
+    --primaryLt:  #E97073;
+    --primarySoft:#FDE8E8;
+    --accent:     #D74143;   /* same brand red for CTAs and cost — keeps the identity tight */
+    --accentDk:   #B22A2C;
+    --gold:       #C89321;   /* secondary highlight — warm gold pairs with red */
+    --paper:      #FFFFFF;
+    --bg:         #FBF8F4;   /* warm off-white */
+    --bgSoft:     #F5EFE6;
+    --bgInsight:  #FEF8E8;   /* warm cream for callouts */
+    --bgWarn:     #FCE7D8;
+    --rule:       #E5DDD0;
+    --muted:      #6B6358;
+    --success:    #16A34A;
+    --shadow:     0 4px 14px rgba(26, 26, 26, 0.06);
+    --shadowHi:   0 8px 32px rgba(26, 26, 26, 0.12);
+    --radius:     12px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* =========================================================
+     Layout
+     ========================================================= */
+  .app {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 20px 20px 80px;
+    min-height: 100vh;
+  }
+
+  /* Topbar with iMerit logo */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0 20px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 28px;
+    gap: 16px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 14px;
+    text-decoration: none; color: inherit;
+  }
+  .logo-img {
+    height: 38px; width: auto;
+    display: block;
+  }
+  .logo-tagline {
+    border-left: 2px solid var(--rule);
+    padding-left: 14px;
+    font-size: 11px; color: var(--muted);
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .topbar .meta {
+    font-size: 12px; color: var(--muted);
+    font-style: italic; text-align: right;
+  }
+
+  /* Resume banner */
+  .resume-banner {
+    background: var(--primarySoft);
+    border: 1px solid var(--primaryLt);
+    border-left: 4px solid var(--primary);
+    padding: 14px 18px; border-radius: 8px;
+    margin-bottom: 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .resume-banner .resume-text {
+    font-size: 14px; color: var(--ink);
+  }
+  .resume-banner .resume-text strong { color: var(--primary); }
+  .resume-banner .resume-actions { display: flex; gap: 8px; }
+
+  /* =========================================================
+     Screens (animated)
+     ========================================================= */
+  .screen { display: none; animation: fadeIn 0.35s ease-out; }
+  .screen.active { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* =========================================================
+     Landing
+     ========================================================= */
+  #landing { text-align: left; padding: 24px 0 40px; }
+  #landing .eyebrow {
+    font-size: 12px; font-weight: 700; color: var(--primary);
+    letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  #landing h1 {
+    font-size: clamp(36px, 6vw, 56px);
+    color: var(--ink); margin: 0 0 8px;
+    line-height: 1.05; font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  #landing h1 .sub { color: var(--primary); font-weight: 800; }
+  #landing .tagline {
+    font-size: clamp(18px, 2.4vw, 22px);
+    color: var(--inkSoft); font-style: italic;
+    margin: 20px 0 28px;
+    border-top: 3px solid var(--primary);
+    padding-top: 18px;
+    max-width: 620px;
+  }
+  #landing .lede {
+    font-size: 16px; color: var(--muted);
+    max-width: 600px; margin-bottom: 36px;
+  }
+  #landing .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 20px; margin: 32px 0;
+    max-width: 520px;
+  }
+  #landing .stat { border-left: 3px solid var(--primary); padding-left: 14px; }
+  #landing .stat-num { font-size: 28px; font-weight: 800; color: var(--ink); display: block; }
+  #landing .stat-lbl { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* =========================================================
+     Buttons
+     ========================================================= */
+  .btn {
+    appearance: none; border: 0; cursor: pointer;
+    font-family: inherit; font-weight: 700;
+    padding: 14px 26px; border-radius: 8px;
+    font-size: 16px; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 10px;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--primary); color: white;
+    box-shadow: 0 2px 0 var(--primaryDk);
+  }
+  .btn-primary:hover {
+    background: var(--primaryDk);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 0 var(--primaryDk), 0 4px 12px rgba(178, 42, 44, 0.3);
+  }
+  .btn-primary:active { transform: translateY(1px); box-shadow: 0 0 0 var(--primaryDk); }
+
+  .btn-dark {
+    background: var(--ink); color: white;
+    box-shadow: 0 2px 0 #000;
+  }
+  .btn-dark:hover {
+    background: #000;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 0 #000, 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-secondary {
+    background: transparent; color: var(--ink);
+    border: 2px solid var(--ink);
+  }
+  .btn-secondary:hover { background: var(--ink); color: white; }
+  .btn-secondary:disabled {
+    opacity: 0.3; cursor: not-allowed;
+    border-color: var(--muted); color: var(--muted);
+  }
+  .btn-secondary:disabled:hover { background: transparent; color: var(--muted); }
+
+  .btn-ghost {
+    background: transparent; color: var(--muted);
+    padding: 8px 12px; font-size: 14px;
+  }
+  .btn-ghost:hover { color: var(--primary); }
+
+  .btn-sm { padding: 8px 14px; font-size: 13px; }
+  .btn-lg { padding: 16px 32px; font-size: 17px; }
+
+  .download-hint {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    font-style: italic;
+    margin: 16px auto 0;
+    max-width: 540px;
+    line-height: 1.5;
+  }
+  .download-hint strong { color: var(--ink); font-style: normal; }
+
+  /* =========================================================
+     Progress bar
+     ========================================================= */
+  .progress { margin-bottom: 28px; }
+  .progress-track {
+    display: flex; justify-content: space-between;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .progress-track::before {
+    content: ""; position: absolute;
+    top: 14px; left: 14px; right: 14px;
+    height: 2px; background: var(--rule); z-index: 0;
+  }
+  .progress-node {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: white; border: 2px solid var(--rule);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: var(--muted);
+    z-index: 1; transition: all 0.3s;
+    flex-shrink: 0;
+  }
+  .progress-node.done {
+    background: var(--primaryLt); border-color: var(--primaryLt); color: white;
+  }
+  .progress-node.current {
+    background: var(--primary); border-color: var(--primary); color: white;
+    box-shadow: 0 0 0 4px rgba(215, 65, 67, 0.15);
+    transform: scale(1.1);
+  }
+  .progress-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; color: var(--muted);
+  }
+  .progress-label {
+    font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .progress-save {
+    color: var(--success); font-weight: 600;
+    display: inline-flex; align-items: center; gap: 4px;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .progress-save.visible { opacity: 1; }
+  .progress-save::before { content: "✓"; font-size: 14px; }
+
+  /* =========================================================
+     Step content
+     ========================================================= */
+  .step-num {
+    color: var(--primary); font-weight: 800; font-size: 13px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .step h2 {
+    color: var(--ink); font-size: clamp(26px, 4vw, 34px);
+    margin: 0 0 12px; font-weight: 800;
+    line-height: 1.15; letter-spacing: -0.3px;
+  }
+  .step .lead {
+    color: var(--inkSoft); font-size: 16px;
+    max-width: 680px; margin-bottom: 32px;
+  }
+
+  /* =========================================================
+     Option cards
+     ========================================================= */
+  .options { display: grid; gap: 12px; margin-bottom: 32px; }
+  .option {
+    appearance: none; cursor: pointer;
+    background: white; border: 2px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    text-align: left; width: 100%;
+    transition: all 0.2s;
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 16px; align-items: center;
+    font-family: inherit;
+    box-shadow: var(--shadow);
+  }
+  .option:hover {
+    border-color: var(--primaryLt);
+    transform: translateY(-2px);
+    box-shadow: var(--shadowHi);
+  }
+  .option.selected {
+    border-color: var(--primary);
+    background: linear-gradient(to right, var(--primarySoft), white);
+    box-shadow: 0 0 0 3px rgba(215, 65, 67, 0.1), var(--shadowHi);
+  }
+  .option.selected .opt-name { color: var(--primary); }
+  .option.selected .cost-badge {
+    background: var(--primary); color: white;
+    transform: scale(1.05);
+  }
+  .opt-content { min-width: 0; }
+  .opt-name {
+    font-size: 17px; font-weight: 700; color: var(--ink);
+    margin: 0 0 4px;
+  }
+  .opt-desc {
+    font-size: 14px; color: var(--muted); margin: 0;
+    line-height: 1.4;
+  }
+  .cost-badge {
+    background: var(--bgSoft); color: var(--primary);
+    padding: 6px 12px; border-radius: 6px;
+    font-weight: 800; font-size: 18px;
+    transition: all 0.2s;
+    min-width: 60px; text-align: center;
+    font-feature-settings: "tnum";
+    letter-spacing: 0.5px;
+  }
+
+  .step-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px; padding-top: 20px;
+    border-top: 1px solid var(--rule);
+  }
+
+  /* Path summary */
+  .path-summary {
+    margin-top: 28px; padding: 16px 20px;
+    background: var(--bgSoft); border-radius: var(--radius);
+    border-left: 4px solid var(--primary);
+  }
+  .path-summary .label {
+    font-size: 11px; font-weight: 800; color: var(--ink);
+    letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .path-chip {
+    background: white; color: var(--ink);
+    padding: 4px 10px; border-radius: 4px;
+    font-size: 12px; font-weight: 600;
+    border: 1px solid var(--rule);
+  }
+  .chip-num { color: var(--primary); font-weight: 800; margin-right: 4px; }
+
+  /* =========================================================
+     Results screen
+     ========================================================= */
+  #results .reveal {
+    text-align: center; margin-bottom: 8px;
+    color: var(--primary); font-weight: 800;
+    font-size: 13px; letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  #results h2 {
+    text-align: center; color: var(--ink);
+    font-size: 32px; margin: 0 0 28px; font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+
+  .tier-card {
+    background: white; border-radius: 16px;
+    overflow: hidden; box-shadow: var(--shadowHi);
+    margin-bottom: 24px;
+    animation: revealUp 0.5s ease-out 0.2s both;
+    border: 1px solid var(--rule);
+  }
+  @keyframes revealUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .tier-header {
+    background: var(--ink); color: white;
+    padding: 24px 28px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .tier-header .tier-num {
+    color: var(--primary); font-weight: 800;
+    font-size: 14px; letter-spacing: 2px;
+  }
+  .tier-header .tier-name {
+    font-size: 28px; font-weight: 800;
+    line-height: 1.1;
+  }
+  .tier-body { padding: 24px 28px; }
+  .tier-row {
+    display: grid; grid-template-columns: 130px 1fr;
+    gap: 16px; padding: 14px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .tier-row:last-child { border-bottom: 0; }
+  .tier-row .tier-label {
+    font-size: 12px; font-weight: 800; color: var(--ink);
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  .tier-row .tier-value { color: var(--inkSoft); }
+  .tier-row .tier-value.cost {
+    color: var(--primary); font-weight: 800;
+    font-size: 22px; line-height: 1;
+  }
+
+  .insight {
+    background: var(--bgInsight);
+    border-left: 6px solid var(--gold);
+    padding: 16px 20px; border-radius: 8px;
+    margin: 20px 0;
+  }
+  .insight .insight-label {
+    color: var(--gold); font-weight: 800;
+    font-size: 11px; letter-spacing: 1.5px;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .insight p { margin: 0; color: var(--ink); }
+
+  .spec-recap {
+    background: white; border-radius: var(--radius);
+    border: 1px solid var(--rule);
+    padding: 24px; margin: 20px 0;
+  }
+  .spec-recap h3 {
+    margin: 0 0 14px; color: var(--ink);
+    font-size: 18px; font-weight: 800;
+  }
+  .spec-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 8px 24px;
+  }
+  .spec-item {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--bgSoft);
+    font-size: 14px;
+  }
+  .spec-item .spec-num {
+    color: var(--primary); font-weight: 800;
+    min-width: 22px;
+  }
+  .spec-item .spec-text { color: var(--inkSoft); flex: 1; }
+  .spec-item .spec-text strong { color: var(--ink); }
+
+  .results-actions {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    justify-content: center; margin-top: 24px;
+  }
+
+  /* Confirmation toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: white;
+    padding: 14px 22px; border-radius: 8px;
+    font-size: 14px; font-weight: 600;
+    box-shadow: var(--shadowHi);
+    opacity: 0; transition: all 0.3s;
+    z-index: 100;
+    pointer-events: none;
+    max-width: 90vw;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  .toast.success { background: var(--success); }
+
+  /* Footer */
+  .footer {
+    margin-top: 60px; padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 20px; flex-wrap: wrap;
+    font-size: 12px; color: var(--muted);
+  }
+  .footer .contact a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .footer .contact a:hover { text-decoration: underline; }
+  .footer .links { display: flex; gap: 14px; align-items: center; }
+  .footer .links a { color: var(--muted); text-decoration: none; }
+  .footer .links a:hover { color: var(--primary); }
+  .footer .disclaimer {
+    width: 100%; margin-top: 12px;
+    font-style: italic; line-height: 1.4;
+  }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .app { padding: 14px 14px 60px; }
+    .topbar .meta { display: none; }
+    .logo-tagline { display: none; }
+    .logo-img { height: 32px; }
+    .progress-label { font-size: 11px; }
+    .progress-node { width: 22px; height: 22px; font-size: 10px; }
+    .option { padding: 14px 16px; }
+    .opt-name { font-size: 15px; }
+    .opt-desc { font-size: 13px; }
+    .cost-badge { font-size: 16px; min-width: 50px; padding: 5px 10px; }
+    #landing .stats { grid-template-columns: 1fr; }
+    .tier-header { padding: 20px; }
+    .tier-header .tier-name { font-size: 22px; }
+    .tier-body { padding: 20px; }
+    .tier-row { grid-template-columns: 1fr; gap: 4px; padding: 12px 0; }
+    .spec-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .step-nav { flex-direction: column-reverse; }
+    .step-nav .btn { width: 100%; justify-content: center; }
+    .footer { flex-direction: column; gap: 12px; }
+  }
+
+  /* Print stylesheet — for Save as PDF */
+  @media print {
+    body { background: white; }
+    .app { max-width: none; padding: 0; }
+    .topbar { border-bottom: 2px solid var(--primary); page-break-inside: avoid; }
+    .resume-banner, .step-nav, .results-actions, .download-hint,
+    .progress, .path-summary, .toast, #landing, #step,
+    .footer .links { display: none !important; }
+    #results { display: block !important; }
+    .tier-card { box-shadow: none; border: 1px solid var(--rule); page-break-inside: avoid; }
+    .spec-recap, .insight { box-shadow: none; page-break-inside: avoid; }
+    .footer { margin-top: 30px; page-break-inside: avoid; }
+    .footer .disclaimer { display: block; }
+    h2, h3 { page-break-after: avoid; }
+    @page { margin: 1.5cm; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Topbar with embedded iMerit logo (base64 PNG, transparent background) -->
+  <div class="topbar">
+    <a href="https://imerit.ai" class="logo" target="_blank" rel="noopener">
+      <img class="logo-img" alt="iMerit" src="data:image/png;base64,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GIZhtLS0qJqamu8BKCOivp33Bx6sTQ3DwGeffUbLly+XWUuGXNdl/fr1M/r06fPJzTff/O4rr7zy4S233PL9MWPGFGZXX1FFRcUhd0KfPn14IBB4OxQKRYio6f7777948eLF19TW1n5v3LhxdvZeKKupFWMMFRUVny1evPiajz/++OpFixZdkz2ue/311797zz33KNM0w2VlZfHcKq1vkmkKduyxdoixJkDWm2Vd4AYCnLkCphId5imTIObCNhRsAXhcjnBKgGeAhADSXg6DC3gME8JVsByAIJDkACOBQIYhaBM4uR1zKftnro7tZ0mgywEIJqKRZgl/0TlIpYYEg8E9HPI3Npoz+0swH+JMfliJ/PLyciORSOQPHjy4obq6ep3H44HrumQYBjjnzLIs8dlnn/luuOGGS+bNm/f+tm3byOPxsKyGICmlHDx4cOqee+55IhqNlhPRKU1NTfHDCNKwbICoJ4BzZ82aNTkej5NhGCJrirl5eXmib9++f3nsscee2rFjh3/ChAkLGWOJ4uLiXUKIpubm5vH19fWXFxcXz//1r3994+DBg1OO48isCc8Mw5Dbt28PV1dXXxWPxz1jxow5lIjtXq1tmqZQSkkpJRs3btyus846a3xdXd2Pfve73715ySWXjHnooYdWhsPh5vr6+gTQsfj+UM6dnbQYEfFEIlEeDofXf/jhh+qdd94p3bRpU1EymeSdc765IxqNWhUVFWavXr28FRUVZkVFhVlZWWktXLgw2NzcvCQvL291MBhsZIzJI5W+OILLpaJFLYmWC+20WCmLShXvWspihg1iNgxFcJkJBQ6HEzKmCylsGCwDziXSBiFlmsgIE2koKAZIEFxOMBmDR3ZoQpcrKEbwSA5Lciiu4AgJKagjxkwdB0DgnGCTqwqLuggkkxsg5UaqqRF5zKotZsWx/fkVBzJzsoGRw49gKYVevXp5MpnMmjfeeGP+tddeW3HxxRdvZIxxKaWybRtExBzHobfeemv0W2+91Tfrr3HGGGzblkVFReb1118/vV+/fgvz8/NnA1hSXFwcyCXy92dO73P/EgAvKir665tvvtl948aNJUSkstqQXNdl+fn57c8+++xjjLE3nnvuuY+mTZsmc+5GIBBYTER/55z/4/e///2OY4455snLL798TXbbkVRKQQjBI5EImz9//inBYHDt/Pnzv7Be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">
+      <span class="logo-tagline">Egocentric Data<br>Configurator</span>
+    </a>
+    <div class="meta">Edition 2026.2</div>
+  </div>
+
+  <!-- Resume banner -->
+  <div class="resume-banner" id="resumeBanner" style="display: none;">
+    <div class="resume-text">
+      <strong>Welcome back.</strong> You left off on Step <span id="resumeStep">1</span> of 9.
+      Continue where you stopped, or start fresh.
+    </div>
+    <div class="resume-actions">
+      <button class="btn btn-primary btn-sm" onclick="resumeProgress()">Continue  →</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearProgress()">Start over</button>
+    </div>
+  </div>
+
+  <!-- LANDING -->
+  <section id="landing" class="screen active">
+    <div class="eyebrow">Buyer's Configurator</div>
+    <h1>Configure your egocentric<br>dataset in <span class="sub">nine decisions.</span></h1>
+    <p class="tagline">Nine questions. Two minutes. A personalized recommendation built around your model objective.</p>
+
+    <p class="lede">This is iMerit's interactive companion to the Egocentric Data Collection Decision Guide. Move through nine choices about purpose, sensors, scale, and procurement — and we'll map your composite spec to one of five solution tiers, with a clear next step.</p>
+
+    <div class="stats">
+      <div class="stat"><span class="stat-num">9</span><span class="stat-lbl">Decisions</span></div>
+      <div class="stat"><span class="stat-num">5</span><span class="stat-lbl">Solution tiers</span></div>
+      <div class="stat"><span class="stat-num">~2 min</span><span class="stat-lbl">To finish</span></div>
+    </div>
+
+    <button class="btn btn-primary" onclick="startConfigurator()">Start configuring  →</button>
+  </section>
+
+  <!-- STEP -->
+  <section id="step" class="screen">
+    <div class="progress">
+      <div class="progress-track" id="progressTrack"></div>
+      <div class="progress-meta">
+        <span class="progress-label" id="progressLabel">Step 1 of 9</span>
+        <span class="progress-save" id="progressSave">Progress saved</span>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" id="stepNum">STEP 01  ·  CONFIGURATOR</div>
+      <h2 id="stepQuestion">Loading…</h2>
+      <p class="lead" id="stepLead"></p>
+
+      <div class="options" id="stepOptions"></div>
+
+      <div class="step-nav">
+        <button class="btn btn-ghost" onclick="goBack()">←  Back</button>
+        <button class="btn btn-primary" id="nextBtn" onclick="goNext()" disabled>Next  →</button>
+      </div>
+
+      <div class="path-summary" id="pathSummary" style="display: none;">
+        <div class="label">Your path so far</div>
+        <div class="chips" id="pathChips"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results" class="screen">
+    <div class="reveal">Your recommendation</div>
+    <h2 id="resultsTitle">Tier 3 · Custom RGB Collection</h2>
+
+    <div class="tier-card">
+      <div class="tier-header">
+        <div class="tier-num" id="tierNumLabel">TIER 3</div>
+        <div class="tier-name" id="tierName">Custom RGB Collection</div>
+      </div>
+      <div class="tier-body">
+        <div class="tier-row"><div class="tier-label">Typical Use Cases</div><div class="tier-value" id="tierUseCases"></div></div>
+        <div class="tier-row"><div class="tier-label">Complexity</div><div class="tier-value" id="tierComplexity"></div></div>
+        <div class="tier-row"><div class="tier-label">Cost</div><div class="tier-value cost" id="tierCost">$$$</div></div>
+        <div class="tier-row"><div class="tier-label">Next Step</div><div class="tier-value" id="tierNextStep"></div></div>
+      </div>
+    </div>
+
+    <div class="insight" id="dynamicInsight">
+      <div class="insight-label" id="insightLabel">Decision Insight</div>
+      <p id="insightText"></p>
+    </div>
+
+    <div class="spec-recap">
+      <h3>Your nine-decision spec</h3>
+      <div class="spec-grid" id="specGrid"></div>
+    </div>
+
+    <div class="results-actions">
+      <button class="btn btn-primary btn-lg" onclick="downloadPDF()">📄  Download as PDF</button>
+      <button class="btn btn-ghost" onclick="restart()">↺  Start over</button>
+    </div>
+
+    <p class="download-hint">When the print dialog opens, choose <strong>Save as PDF</strong> as the destination to save a copy for your records or to share with your team.</p>
+  </section>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="contact">
+      iMerit Technology · <a href="mailto:info@imerit.net">info@imerit.net</a> · <a href="https://imerit.ai" target="_blank" rel="noopener">imerit.ai</a>
+    </div>
+    <div class="links">
+      <a href="https://imerit.ai/contact-us/" target="_blank" rel="noopener">Contact</a>
+      <a href="https://imerit.ai/privacy-policy/" target="_blank" rel="noopener">Privacy</a>
+    </div>
+    <div class="disclaimer">
+      Cost indicators are relative-effort signals only — not pricing. They surface where complexity, calendar time, and operational risk concentrate. Use them to compare paths, not to budget. © iMerit 2026.
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   CONFIGURATION
+   ========================================================= */
+const STORAGE_KEY = "iMerit_egoConfigurator_v1";
+const PROGRESS_MAX_AGE_DAYS = 30;
+
+/* =========================================================
+   DATA — the nine decisions
+   ========================================================= */
+const STEPS = [
+  { num: 1, short: "Purpose", question: "What are you trying to learn?",
+    lead: "Your model objective determines which signals matter and which fidelity tier is sufficient. Pick the use-case cluster closest to yours.",
+    options: [
+      { name: "Human Activity Recognition", desc: "Daily activities, workplace procedures, retail interactions.", cost: 1, costLabel: "$" },
+      { name: "Hand-Object Interactions", desc: "Assembly, tool use, fine-grained manipulation, AR overlays.", cost: 2.5, costLabel: "$$" },
+      { name: "Robotics & Imitation Learning", desc: "Manipulation policies, VLA training, behavior cloning.", cost: 4, costLabel: "$$$$" },
+      { name: "AR / VR & Spatial Understanding", desc: "Mixed reality, spatial reasoning, digital twins, scene understanding.", cost: 4, costLabel: "$$$$" },
+    ] },
+  { num: 2, short: "Fidelity", question: "How accurate must the data be?",
+    lead: "Pick the lowest tier that still clears your deployment bar. Over-specifying fidelity is the most common way to overspend on a dataset.",
+    options: [
+      { name: "Exploratory / Prototype", desc: "Validate concepts, train baseline models, internal demos.", cost: 1, costLabel: "$" },
+      { name: "Production Quality", desc: "Deploy-grade datasets, customer-facing systems, repeatable accuracy.", cost: 3, costLabel: "$$$" },
+      { name: "Research Grade", desc: "Benchmarks, evaluation sets, published research datasets.", cost: 5, costLabel: "$$$$$" },
+    ] },
+  { num: 3, short: "Sensors", question: "What sensors do you need?",
+    lead: "Sensor count compounds operational overhead — synchronization, calibration drift, and new failure modes appear as soon as you add a second sensor.",
+    options: [
+      { name: "Single RGB Camera", desc: "GoPro, wearable cam, smart glasses. The simplest path.", cost: 1, costLabel: "$" },
+      { name: "Stereo RGB", desc: "Two synchronized RGB streams for depth from stereo.", cost: 2, costLabel: "$$" },
+      { name: "RGB + Depth (RGB-D)", desc: "RealSense / OAK-D / Azure Kinect class devices.", cost: 3, costLabel: "$$$" },
+      { name: "Multi-Camera / Mocap", desc: "Multi-view rig or optical motion capture environment.", cost: 5, costLabel: "$$$$$" },
+    ] },
+  { num: 4, short: "Hands", question: "Do you need hand tracking?",
+    lead: "Hand requirements are the second-fastest cost escalator after sensor count. Pick the lowest tier that supports your model objective.",
+    options: [
+      { name: "No Hand Tracking", desc: "Activity-level only — hands not part of the signal.", cost: 1, costLabel: "$" },
+      { name: "Hands Visible Only", desc: "Hands present in frame; interactions observable.", cost: 2, costLabel: "$$" },
+      { name: "2D Hand Pose", desc: "Finger-level 2D keypoint annotation (21-keypoint).", cost: 3, costLabel: "$$$" },
+      { name: "Full 3D Hand Pose", desc: "Wrist tracking, finger articulation, spatial reconstruction.", cost: 5, costLabel: "$$$$$" },
+    ] },
+  { num: 5, short: "Depth", question: "Do you need depth information?",
+    lead: "Depth most cleanly separates 2D computer-vision programs from spatial-AI programs. Map your model objective to the lowest tier that supports it.",
+    options: [
+      { name: "No Depth", desc: "2D-only learning. The simplest path.", cost: 1, costLabel: "$" },
+      { name: "Approximate Depth", desc: "Stereo-derived or monocular-estimated. Good for general spatial awareness.", cost: 2, costLabel: "$$" },
+      { name: "Ground-Truth Depth", desc: "Measured depth, sensor-validated or mocap-aligned.", cost: 4, costLabel: "$$$$" },
+    ] },
+  { num: 6, short: "Scale", question: "How much data do you need?",
+    lead: "Size diversity first, then hours. Two hundred hours across two hundred participants beats two thousand hours from twenty.",
+    options: [
+      { name: "Pilot Dataset", desc: "10 – 50 hours. Feasibility, baseline training, protocol shakedown.", cost: 1, costLabel: "$" },
+      { name: "Small Production", desc: "50 – 500 hours. First production model, narrow-task deployments.", cost: 2, costLabel: "$$" },
+      { name: "Large Production", desc: "500 – 5,000 hours. Multi-task models, broad environmental coverage.", cost: 3, costLabel: "$$$" },
+      { name: "Foundation Model Scale", desc: "5,000+ hours. Pretraining corpora, generalist embodied agents.", cost: 5, costLabel: "$$$$$" },
+    ] },
+  { num: 7, short: "Annotation", question: "What annotation do you need?",
+    lead: "Match annotation depth to model objective; over-labeling produces noise, under-labeling produces an unusable dataset.",
+    options: [
+      { name: "No Annotation", desc: "Raw captures for self-supervised pretraining.", cost: 1, costLabel: "$" },
+      { name: "Metadata Only", desc: "Task category, environment, device, demographic stratification.", cost: 2, costLabel: "$$" },
+      { name: "Event-Level Annotation", desc: "Action boundaries, sub-task segmentation, error events.", cost: 3, costLabel: "$$$" },
+      { name: "Detailed Ground Truth", desc: "Per-frame multi-modal — hand pose, object tracking, action labels.", cost: 5, costLabel: "$$$$$" },
+    ] },
+  { num: 8, short: "Output", question: "What output format do you need?",
+    lead: "Pick the lowest output tier that doesn't force your team to rebuild infrastructure you don't have. Over-buying this tier is the most common waste in a data program.",
+    options: [
+      { name: "Raw Sensor Streams", desc: "Maximum flexibility, minimum pre-processing. Your team owns it all.", cost: 1, costLabel: "$" },
+      { name: "Calibrated & Synchronized", desc: "Time-aligned, calibrated bundles ready to annotate.", cost: 2, costLabel: "$$" },
+      { name: "Annotated Bundles", desc: "Labeled data in COCO / KITTI / custom JSON. Ingestion-ready.", cost: 3, costLabel: "$$$" },
+      { name: "Derived Ground Truth", desc: "Hand pose, 3D reconstructions, action segments, contact states.", cost: 4, costLabel: "$$$$" },
+      { name: "Model-Ready Packages", desc: "WebDataset / TFRecord / PyTorch-ready, with train/val/test splits.", cost: 5, costLabel: "$$$$$" },
+    ] },
+  { num: 9, short: "Source", question: "Existing, hybrid, or fully custom?",
+    lead: "Hybrid is the default answer for most production programs — not the compromise. The work is in identifying the gaps, not in choosing a side.",
+    options: [
+      { name: "Off-the-Shelf Dataset", desc: "Existing public or commercial corpora. Fastest, cheapest, constrained.", cost: 1, costLabel: "$" },
+      { name: "Hybrid", desc: "Existing data plus targeted custom collection. Best for production.", cost: 3, costLabel: "$$$" },
+      { name: "Fully Custom Dataset", desc: "Bespoke collection end to end. Highest control, longest calendar.", cost: 5, costLabel: "$$$$$" },
+    ] },
+];
+
+const TIERS = [
+  {},
+  { num: 1, name: "Existing Dataset", cost: "$",
+    complexity: "Low — licensing review and taxonomy mapping are the primary work.",
+    useCases: "Pretraining, baseline model training, feasibility validation, hypothesis testing.",
+    nextStep: "Browse the iMerit catalog in Section 07 of the Decision Guide. Identify candidates, complete licensing review, map taxonomy to your model objective, then run a baseline." },
+  { num: 2, name: "Existing Dataset + Light Annotation", cost: "$$",
+    complexity: "Low–Moderate — adds annotation pipeline and taxonomy design.",
+    useCases: "Adapting an existing corpus to a specific taxonomy; augmenting pretrained models for a vertical.",
+    nextStep: "Define your taxonomy, pilot annotation on a representative subset, and confirm inter-annotator agreement before committing to scale." },
+  { num: 3, name: "Custom RGB Collection", cost: "$$$",
+    complexity: "Moderate–High — protocol authoring, recruitment, sustained QC.",
+    useCases: "Activity recognition at production fidelity; first-production behavioral models; vertical deployments.",
+    nextStep: "Author the capture protocol, run a 10–50 hour pilot, validate against the eight-dimension Quality Framework, then scale." },
+  { num: 4, name: "Custom RGB + Annotation", cost: "$$$$",
+    complexity: "High — adds event-level or detailed annotation on top of custom collection.",
+    useCases: "Hand-object interaction models, gesture systems, AR overlays, narrow-task manipulation training.",
+    nextStep: "Design taxonomy alongside protocol. Pilot capture and annotation together. Confirm throughput and quality at small scale before committing to large volume." },
+  { num: 5, name: "Research-Grade Multi-Sensor Collection", cost: "$$$$$",
+    complexity: "Very High — multi-sensor, controlled environments, multi-stage review, full ground truth.",
+    useCases: "Foundation-model corpora, dexterous-policy training data, AR/VR ground truth, benchmark construction.",
+    nextStep: "Treat as a multi-quarter program. Stand up dedicated capture infrastructure, calibration discipline, and specialist annotation. Match staffing to scale and timeline." },
+];
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let currentStep = 1;
+let selections = {};
+let sessionId = null;
+let sessionStart = null;
+
+/* =========================================================
+   PERSISTENCE
+   ========================================================= */
+function saveProgress() {
+  try {
+    const payload = {
+      version: 1,
+      sessionId: sessionId || (sessionId = generateSessionId()),
+      sessionStart: sessionStart || (sessionStart = new Date().toISOString()),
+      currentStep, selections,
+      updatedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    flashSavedIndicator();
+  } catch (e) {}
+}
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    const ageMs = Date.now() - new Date(data.updatedAt).getTime();
+    const maxAgeMs = PROGRESS_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+    if (ageMs > maxAgeMs) { localStorage.removeItem(STORAGE_KEY); return null; }
+    return data;
+  } catch (e) { return null; }
+}
+
+function clearProgress() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  document.getElementById("resumeBanner").style.display = "none";
+  selections = {}; currentStep = 1; sessionId = null; sessionStart = null;
+}
+
+function resumeProgress() {
+  const data = loadProgress();
+  if (!data) return;
+  selections = data.selections || {};
+  currentStep = data.currentStep || 1;
+  sessionId = data.sessionId;
+  sessionStart = data.sessionStart;
+  document.getElementById("resumeBanner").style.display = "none";
+  showScreen("step");
+  renderStep();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function checkForSavedProgress() {
+  const data = loadProgress();
+  if (!data || !data.currentStep) return;
+  if (!data.selections || Object.keys(data.selections).length === 0) return;
+  document.getElementById("resumeStep").textContent = data.currentStep;
+  document.getElementById("resumeBanner").style.display = "flex";
+}
+
+function generateSessionId() {
+  return "ecf-" + Math.random().toString(36).slice(2, 10) + "-" + Date.now().toString(36);
+}
+
+let saveFlashTimer = null;
+function flashSavedIndicator() {
+  const el = document.getElementById("progressSave");
+  if (!el) return;
+  el.classList.add("visible");
+  clearTimeout(saveFlashTimer);
+  saveFlashTimer = setTimeout(() => el.classList.remove("visible"), 1600);
+}
+
+/* =========================================================
+   CONTROL FLOW
+   ========================================================= */
+function startConfigurator() {
+  currentStep = 1; selections = {};
+  sessionId = generateSessionId();
+  sessionStart = new Date().toISOString();
+  saveProgress();
+  showScreen("step"); renderStep();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function renderStep() {
+  const step = STEPS[currentStep - 1];
+  const total = STEPS.length;
+  document.getElementById("stepNum").textContent = `STEP ${String(step.num).padStart(2, "0")}  ·  CONFIGURATOR`;
+  document.getElementById("stepQuestion").textContent = step.question;
+  document.getElementById("stepLead").textContent = step.lead;
+  renderProgress();
+
+  const optsEl = document.getElementById("stepOptions");
+  optsEl.innerHTML = "";
+  step.options.forEach((opt, idx) => {
+    const isSelected = selections[currentStep] === idx;
+    const btn = document.createElement("button");
+    btn.className = "option" + (isSelected ? " selected" : "");
+    btn.onclick = () => selectOption(idx);
+    btn.innerHTML = `<div class="opt-content"><div class="opt-name">${opt.name}</div><p class="opt-desc">${opt.desc}</p></div><div class="cost-badge">${opt.costLabel}</div>`;
+    optsEl.appendChild(btn);
+  });
+
+  document.getElementById("nextBtn").disabled = selections[currentStep] === undefined;
+  document.getElementById("nextBtn").textContent = currentStep === total ? "See my recommendation  →" : "Next  →";
+  renderPathSummary();
+}
+
+function renderProgress() {
+  const total = STEPS.length;
+  const trackEl = document.getElementById("progressTrack");
+  trackEl.innerHTML = "";
+  STEPS.forEach((s, i) => {
+    const stepIdx = i + 1;
+    const node = document.createElement("div");
+    node.className = "progress-node" + (stepIdx < currentStep ? " done" : "") + (stepIdx === currentStep ? " current" : "");
+    node.textContent = stepIdx;
+    trackEl.appendChild(node);
+  });
+  document.getElementById("progressLabel").textContent = `Step ${currentStep} of ${total}  ·  ${STEPS[currentStep-1].short}`;
+}
+
+function renderPathSummary() {
+  const chips = Object.keys(selections);
+  const wrap = document.getElementById("pathSummary");
+  if (chips.length === 0) { wrap.style.display = "none"; return; }
+  wrap.style.display = "block";
+  const chipEl = document.getElementById("pathChips");
+  chipEl.innerHTML = "";
+  chips.forEach(stepNum => {
+    const s = STEPS[parseInt(stepNum) - 1];
+    const opt = s.options[selections[stepNum]];
+    const chip = document.createElement("span");
+    chip.className = "path-chip";
+    chip.innerHTML = `<span class="chip-num">${s.num}.</span>${opt.name}`;
+    chipEl.appendChild(chip);
+  });
+}
+
+function selectOption(idx) { selections[currentStep] = idx; saveProgress(); renderStep(); }
+
+function goBack() {
+  if (currentStep > 1) { currentStep--; saveProgress(); renderStep(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  else { showScreen("landing"); }
+}
+
+function goNext() {
+  if (selections[currentStep] === undefined) return;
+  if (currentStep < STEPS.length) { currentStep++; saveProgress(); renderStep(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  else { showResults(); }
+}
+
+/* =========================================================
+   RECOMMENDATION LOGIC
+   ========================================================= */
+function calculateTier() {
+  const costs = [];
+  for (let i = 1; i <= STEPS.length; i++) costs.push(STEPS[i - 1].options[selections[i]].cost);
+  const avg = costs.reduce((a, b) => a + b, 0) / costs.length;
+  let tier = Math.min(5, Math.max(1, Math.round(avg)));
+  if (selections[2] === 2) tier = Math.max(tier, 5);
+  if (selections[3] === 3) tier = Math.max(tier, 5);
+  if (selections[4] === 3) tier = Math.max(tier, 4);
+  if (selections[5] === 2) tier = Math.max(tier, 4);
+  if (selections[6] === 3) tier = Math.max(tier, 4);
+  if (selections[7] === 3) tier = Math.max(tier, 4);
+  if (selections[9] === 2) tier = Math.max(tier, 3);
+  if (selections[9] === 1) tier = Math.max(tier, 2);
+  if (selections[1] === 2 || selections[1] === 3) tier = Math.max(tier, 3);
+  return tier;
+}
+
+function pickInsight(tier) {
+  if (selections[2] === 2 && selections[3] === 3) return { label: "Decision Insight — Research-grade pathway", text: "You've selected research-grade fidelity and a multi-camera or mocap rig. This is a multi-quarter program with capital infrastructure. Calendar time will be your binding constraint — not unit cost. Plan around that from day one." };
+  if (selections[6] === 3) return { label: "Decision Insight — Foundation scale", text: "Foundation-scale collection is industrial. Recruitment infrastructure, multi-geography capture, sustained annotation throughput, and dataset governance become primary disciplines. Size diversity first — geography, demographics, environments — then hours." };
+  if (selections[4] === 3) return { label: "Decision Insight — Hand pose is where naïve cost models break", text: "Full 3D hand pose typically requires multi-camera capture or mocap. Annotation alone is not the cost center — capture is. Per-hour throughput drops sharply and reviewer specialization becomes a differentiating capability." };
+  if (selections[7] === 3) return { label: "Decision Insight — Annotation is your dominant cost center", text: "Detailed ground-truth annotation will dominate your timeline and budget. Invest heavily in taxonomy design before scaling — a 200-hour labeled dataset on a well-designed taxonomy outperforms a 2,000-hour dataset on a sloppy one." };
+  if (selections[9] === 1) return { label: "Decision Insight — Hybrid is the smart default", text: "Hybrid is the most cost-effective path for production programs — but the underestimated work is taxonomy alignment between the existing and custom sources. Build that into your timeline before pilot." };
+  if (selections[9] === 2) return { label: "Decision Insight — Custom-only is rarely the right answer", text: "Fully custom collection makes sense when no existing corpus addresses your use case. Before committing, validate that hybrid (existing + targeted custom) genuinely won't work — most production programs end up there for a reason." };
+  if (selections[9] === 0) return { label: "Decision Insight — Licensing review is not a formality", text: "Several widely-used egocentric datasets carry research-only licenses or restrictions on commercial use. Run licensing review as a gating step — we've seen procurement timelines blown by a single misread license clause." };
+  if (selections[2] === 0) return { label: "Decision Insight — Treat the pilot as an experiment", text: "Exploratory datasets are best treated as instrumented experiments — capture protocol deficiencies should surface here, not at scale. Be willing to throw the pilot away and rerun with a tighter spec." };
+  if (selections[8] === 4 && selections[7] !== 3) return { label: "Watch Out — You may be over-buying output", text: "Model-ready training packages save downstream effort today and lock you in tomorrow. If your taxonomy is still moving, buy at a lower output tier (annotated bundles, calibrated streams) and own the final processing yourself." };
+  return { label: "Decision Insight — The quality framework is your scoring rubric", text: "Your spec is solid. The next step is to pressure-test it against the eight-dimension Quality Framework in Section 05 of the guide — Participant Compliance, Hand Visibility, Framing, Motion, Lighting, Object Visibility, Sensor Integrity, and Diversity & Coverage. If you can clear all eight, your dataset will train a deployable model." };
+}
+
+/* =========================================================
+   RESULTS RENDERING
+   ========================================================= */
+function showResults() {
+  const tier = calculateTier();
+  const t = TIERS[tier];
+  document.getElementById("resultsTitle").textContent = `Tier ${tier} · ${t.name}`;
+  document.getElementById("tierNumLabel").textContent = `TIER ${tier}`;
+  document.getElementById("tierName").textContent = t.name;
+  document.getElementById("tierUseCases").textContent = t.useCases;
+  document.getElementById("tierComplexity").textContent = t.complexity;
+  document.getElementById("tierCost").textContent = t.cost;
+  document.getElementById("tierNextStep").textContent = t.nextStep;
+  const insight = pickInsight(tier);
+  document.getElementById("insightLabel").textContent = insight.label;
+  document.getElementById("insightText").textContent = insight.text;
+  const grid = document.getElementById("specGrid");
+  grid.innerHTML = "";
+  STEPS.forEach((s, i) => {
+    const opt = s.options[selections[i + 1]];
+    const item = document.createElement("div");
+    item.className = "spec-item";
+    item.innerHTML = `<span class="spec-num">${s.num}.</span><span class="spec-text"><strong>${s.short}</strong> — ${opt.name}</span>`;
+    grid.appendChild(item);
+  });
+  showScreen("results");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function restart() {
+  showToast("Starting over…");
+  if (Object.keys(selections).length > 0) {
+    if (!confirm("Start over? This will clear your current selections.")) return;
+  }
+  clearProgress();
+  showScreen("landing");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* =========================================================
+   ACTIONS
+   ========================================================= */
+function downloadPDF() {
+  // Show immediate feedback so user knows the click registered,
+  // even if the browser delays or blocks the print dialog.
+  showToast("Opening print dialog — choose 'Save as PDF'", "success");
+  try {
+    // Small delay lets the toast render before the print dialog
+    // (some browsers freeze the page during print).
+    setTimeout(() => { window.print(); }, 120);
+  } catch (e) {
+    showToast("Print dialog couldn't open. Try Ctrl/Cmd + P instead.");
+    console.error("Print failed:", e);
+  }
+}
+
+// Explicit window attachment — defensive measure so onclick handlers
+// can always find these functions, regardless of how the script is loaded.
+window.downloadPDF = downloadPDF;
+window.restart = restart;
+window.startConfigurator = startConfigurator;
+window.goBack = goBack;
+window.goNext = goNext;
+window.resumeProgress = resumeProgress;
+window.clearProgress = clearProgress;
+
+
+let toastTimer = null;
+function showToast(text, kind) {
+  const el = document.getElementById("toast");
+  el.textContent = text;
+  el.className = "toast show" + (kind ? " " + kind : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = "toast"; }, 2400);
+}
+
+window.addEventListener("DOMContentLoaded", () => { checkForSavedProgress(); });
+</script>
+
+</body>
+</html>
